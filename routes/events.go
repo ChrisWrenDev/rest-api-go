@@ -2,9 +2,9 @@ package routes
 
 import (
   "net/http"
+  "strconv"
   "github.com/gin-gonic/gin"
   "example.com/rest-api/models"
-  "example.com/rest-api/db"
 )
 
 func createEvent(context *gin.Context){

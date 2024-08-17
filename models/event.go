@@ -32,8 +32,8 @@ func (e Event) Save() error {
   }
 
   id, err := result.LastInsertId() // Get id of event inserted
-
   e.ID = id
+  return err
 }
 
 func GetAllEvents() ([]Event, error) {
@@ -49,7 +49,7 @@ func GetAllEvents() ([]Event, error) {
   var events []Event
 
   for rows.Next() {
-    var event Events
+    var event Event
     
     err := rows.Scan(&event.ID, &event.Name, &event.Description, &event.Location, &event.DateTime, &event.UserID)
 
