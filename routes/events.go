@@ -1,132 +1,138 @@
 package routes
 
 import (
-  "net/http"
-  "strconv"
-  "github.com/gin-gonic/gin"
-  "example.com/rest-api/models"
+	"net/http"
+	"strconv"
+
+	"example.com/rest-api/models"
+	"example.com/rest-api/utils"
+	"github.com/gin-gonic/gin"
 )
 
-func createEvent(context *gin.Context){
-  var event models.Event
-  err := context.ShouldBindJSON(&event)
+func createEvent(context *gin.Context) {
+	token := context.Request.Header.Get("Authorization")
 
-  if err != nil {
-    context.JSON(http.StatusBadRequest, gin.H{"message":"Could not parse request data"})
-    return
-  }
+	if token == "" {
+		context.JSON(http.StatusUnauthorized, gin.H{"message": "Not authorized"})
+		return
+	}
 
-  event.ID = 1
-  event.UserID = 1
+	err := utils.VerifyToken(token)
 
-  err = event.Save()
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"message": "Not authorized"})
+		return
+	}
 
-  if err != nil {
-    context.JSON(http.StatusInternalServerError, gin.H{"message":"Could not create events. Try again later."})
-    return
-  }
+	var event models.Event
+	err = context.ShouldBindJSON(&event)
 
-  context.JSON(http.StatusCreated, gin.H{"message":"Event created", "event":event})
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not parse request data"})
+		return
+	}
+
+	event.ID = 1
+	event.UserID = 1
+
+	err = event.Save()
+
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "Could not create events. Try again later."})
+		return
+	}
+
+	context.JSON(http.StatusCreated, gin.H{"message": "Event created", "event": event})
 }
 
+func getEvents(context *gin.Context) {
+	events, err := models.GetAllEvents()
 
-func getEvents(context *gin.Context){
-  events, err := models.GetAllEvents()
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "Could not fetch events. Try again later."})
+		return
+	}
 
-  if err != nil {
-    context.JSON(http.StatusInternalServerError, gin.H{"message":"Could not fetch events. Try again later."})
-    return
-  }
-
-  context.JSON(http.StatusOK, events)
+	context.JSON(http.StatusOK, events)
 }
 
 func getEvent(context *gin.Context) {
-  eventId, err := strconv.ParseInt(context.Param("id"), 10, 64) // base 10, 64 bit
+	eventId, err := strconv.ParseInt(context.Param("id"), 10, 64) // base 10, 64 bit
 
-  if err != nil {
-    context.JSON(http.StatusBadRequest, gin.H{"message":"Could not parse event id."})
-    return
-  }
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not parse event id."})
+		return
+	}
 
-  event, err := models.GetEventByID(eventId)
+	event, err := models.GetEventByID(eventId)
 
-  if err != nil {
-    context.JSON(http.StatusInternalServerError, gin.H{"message":"Could not fetch event."})
-    return
-  }
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "Could not fetch event."})
+		return
+	}
 
-  context.JSON(http.StatusOK, event)
+	context.JSON(http.StatusOK, event)
 
 }
 
-func updateEvent(context *gin.Context){
-  eventId, err := strconv.ParseInt(context.Param("id"), 10, 64) // base 10, 64 bit
+func updateEvent(context *gin.Context) {
+	eventId, err := strconv.ParseInt(context.Param("id"), 10, 64) // base 10, 64 bit
 
-  if err != nil {
-    context.JSON(http.StatusBadRequest, gin.H{"message":"Could not parse event id."})
-    return
-  }
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not parse event id."})
+		return
+	}
 
-   _, err = models.GetEventByID(eventId)
+	_, err = models.GetEventByID(eventId)
 
-  if err != nil {
-    context.JSON(http.StatusInternalServerError, gin.H{"message":"Could not fetch event."})
-    return
-  }
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "Could not fetch event."})
+		return
+	}
 
-  var updatedEvent models.Event
+	var updatedEvent models.Event
 
-  err = context.ShouldBindJSON(&updatedEvent)
+	err = context.ShouldBindJSON(&updatedEvent)
 
-  if err != nil {
-    context.JSON(http.StatusBadRequest, gin.H{"message":"Could not parse request data"})
-    return
-  }
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not parse request data"})
+		return
+	}
 
-  updatedEvent.ID = eventId
+	updatedEvent.ID = eventId
 
-  err = updatedEvent.Update()
+	err = updatedEvent.Update()
 
-  if err != nil {
-    context.JSON(http.StatusInternalServerError, gin.H{"message":"Could not update event."})
-    return
-  }
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "Could not update event."})
+		return
+	}
 
-  context.JSON(http.StatusOK, gin.H{"message":"Event updated successfully"})
+	context.JSON(http.StatusOK, gin.H{"message": "Event updated successfully"})
 }
 
-func deleteEvent(context *gin.Context){
-  eventId, err := strconv.ParseInt(context.Param("id"), 10, 64) // base 10, 64 bit
+func deleteEvent(context *gin.Context) {
+	eventId, err := strconv.ParseInt(context.Param("id"), 10, 64) // base 10, 64 bit
 
-  if err != nil {
-    context.JSON(http.StatusBadRequest, gin.H{"message":"Could not parse event id."})
-    return
-  }
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not parse event id."})
+		return
+	}
 
-  event, err := models.GetEventByID(eventId)
+	event, err := models.GetEventByID(eventId)
 
-  if err != nil {
-    context.JSON(http.StatusInternalServerError, gin.H{"message":"Could not fetch event."})
-    return
-  }
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "Could not fetch event."})
+		return
+	}
 
-  err = event.Delete()
+	err = event.Delete()
 
-  if err != nil {
-    context.JSON(http.StatusInternalServerError, gin.H{"message":"Could not delete event."})
-    return
-  }
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "Could not delete event."})
+		return
+	}
 
-  context.JSON(http.StatusOK, gin.H{"message":"Event deleted successfully"})
+	context.JSON(http.StatusOK, gin.H{"message": "Event deleted successfully"})
 
- }
-
-
-
-
-
-
-
-
-
+}
